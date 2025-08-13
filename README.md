@@ -33,9 +33,12 @@ git clone https://github.com/Zhalslar/astrbot_plugin_image_summary
 
 ## ⌨️ 使用说明
 
-### 命令表
+直接使用，bot发纯图片消息时触发图片外显
 
 ### 示例图
+
+![Uploading download.jpg…]()
+
 
 ## 👥 贡献指南
 
