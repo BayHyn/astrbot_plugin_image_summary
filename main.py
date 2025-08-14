@@ -1,5 +1,5 @@
 
-from typing import Any
+import random
 import aiohttp
 from astrbot.api.star import Context, Star, register
 from astrbot.core.config.astrbot_config import AstrBotConfig
@@ -58,32 +58,47 @@ class ImageSummaryPlugin(Star):
             summary = self.default_summary
         return summary
 
-    async def _make_request(self, urls: list) -> Any:
+
+
+    async def _make_request(self, urls: list[str]) -> str | None:
         """
-        发送GET请求
-        :param url: 请求的URL地址
-        :param params: 请求参数，默认为None
-        :return: 响应文本或None
+        随机顺序尝试所有 URL，直到拿到「可当作文本」的内容。
+        如果返回 JSON，尝试取其中 'content' 或 'text' 字段；若拿不到，继续换下一个 URL。
+        如果返回纯文本，直接返回。
+        其余情况视为失败，继续重试。
         """
-        for url in urls:
+        if not urls:
+            return None
+
+        # 随机打乱顺序，避免每次都打到第一个
+        for url in random.sample(urls, k=len(urls)):
             try:
-                async with self.session.get(url=url, timeout=30) as response:
-                    response.raise_for_status()
-                    content_type = response.headers.get(
-                        "Content-Type", ""
-                    ).lower()
-                    if "application/json" in content_type:
-                        return await response.json()
-                    elif (
-                        "text/html" in content_type
-                        or "text/plain" in content_type
-                    ):
-                        return (await response.text()).strip()
+                async with self.session.get(url, timeout=30) as resp:
+                    resp.raise_for_status()
+                    ctype = resp.headers.get("Content-Type", "").lower()
+
+                    if "application/json" in ctype:
+                        data = await resp.json()
+                        # 兼容常见字段
+                        text = (
+                            data.get("content")
+                            or data.get("text")
+                            or data.get("msg")
+                            or str(data)  # 兜底
+                        )
+                        if text and isinstance(text, str):
+                            return text.strip()
+
+                    elif "text/html" in ctype or "text/plain" in ctype:
+                        return (await resp.text()).strip()
+
+                    # 其余类型直接跳过
+                    logger.warning(f"{url} 返回非文本类型，跳过")
+                    continue
+
             except Exception as e:
                 logger.warning(f"请求 URL 失败: {url}, 错误: {e}")
-                continue  # 尝试下一个 URL
-        return None
+                continue
 
-    async def terminate(self):
-        await self.session.close()
-        logger.info("已关闭astrbot_plugin_image_summary的网络连接")
+        logger.error("所有 yiyan_urls 均未能获取到可用文本")
+        return None
