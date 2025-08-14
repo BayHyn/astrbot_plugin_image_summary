@@ -1,25 +1,25 @@
 {
     "group_whitelist": {
         "description": "群白名单",
-        "type": "list",
         "hint": "在此列表中的群才会启用图片外显功能，留空表示所有群都启用",
+        "type": "list",
         "default": []
+    },
+    "use_local_data":{
+        "description": "使用本地一言数据",
+        "hint": "数据文件在“data/plugin_data/astrbot_plugin_image_summary/yiyan.json”, 若想自定义一言数据，请自行打开修改, 启用本地数据后，将不再一言API来获取数据",
+        "type": "bool",
+        "default": false
     },
     "yiyan_urls": {
         "description": "一言API",
-        "type": "list",
         "hint": "本插件随机调用列表里的API获取文本, 请确保填入的API返回的数据为文本格式，否则将无法获取数据",
+        "type": "list",
         "default": [
             "https://api.yuafeng.cn/API/ly/yiyan.php",
             "https://api.yuafeng.cn/API/ly/yiyan_new.php",
             "https://api.yuafeng.cn/API/ly/shehui.php",
             "https://api.yuafeng.cn/API/ly/gushi.php"
         ]
-    },
-    "default_summary": {
-        "description": "默认的外显文本",
-        "hint": "API无法获取数据时会改用此文本",
-        "type": "string",
-        "default": "我喜欢你~"
     }
 }
