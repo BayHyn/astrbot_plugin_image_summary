@@ -37,8 +37,7 @@ git clone https://github.com/Zhalslar/astrbot_plugin_image_summary
 
 ### 示例图
 
-![Uploading download.jpg…]()
-
+![download](https://github.com/user-attachments/assets/e2dc0597-b32e-4e81-bee3-137f64caa9e9)
 
 ## 👥 贡献指南
 
