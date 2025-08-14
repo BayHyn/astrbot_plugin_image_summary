@@ -34,8 +34,8 @@ class ImageSummaryPlugin(Star):
 
         chain = event.get_result().chain
 
-        # 仅考虑图片消息
-        if not any(isinstance(seg, Image) for seg in chain):
+        # 仅考虑单张图片消息
+        if not (len(chain)==1 and isinstance(chain[0], Image)):
             return
 
         # 注入summary
@@ -66,26 +66,26 @@ class ImageSummaryPlugin(Star):
         :param params: 请求参数，默认为None
         :return: 响应对象或None
         """
-        for u in urls:
-            async with aiohttp.ClientSession() as session:
-                for u in urls:
-                    try:
-                        async with session.get(
-                            url=u, params=params, timeout=30
-                        ) as response:
-                            response.raise_for_status()
-                            content_type = response.headers.get(
-                                "Content-Type", ""
-                            ).lower()
-                            if "application/json" in content_type:
-                                return await response.json()
-                            elif (
-                                "text/html" in content_type
-                                or "text/plain" in content_type
-                            ):
-                                return (await response.text()).strip()
-                            else:
-                                return await response.read()
-                    except Exception as e:
-                        logger.warning(f"请求 URL 失败: {u}, 错误: {e}")
-                        continue  # 尝试下一个 URL
+        async with aiohttp.ClientSession() as session:
+            for url in urls:
+                try:
+                    async with session.get(
+                        url=url, params=params, timeout=30
+                    ) as response:
+                        response.raise_for_status()
+                        content_type = response.headers.get(
+                            "Content-Type", ""
+                        ).lower()
+                        if "application/json" in content_type:
+                            return await response.json()
+                        elif (
+                            "text/html" in content_type
+                            or "text/plain" in content_type
+                        ):
+                            return (await response.text()).strip()
+                        else:
+                            return await response.read()
+                except Exception as e:
+                    logger.warning(f"请求 URL 失败: {url}, 错误: {e}")
+                    continue  # 尝试下一个 URL
+        return None
