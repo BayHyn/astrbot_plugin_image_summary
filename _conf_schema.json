@@ -8,7 +8,7 @@
     "yiyan_urls": {
         "description": "一言API",
         "type": "list",
-        "hint": "本插件通过调用一言API获取文本, 请确保填入的API返回的数据为文本格式，否则将无法获取数据",
+        "hint": "本插件随机调用列表里的API获取文本, 请确保填入的API返回的数据为文本格式，否则将无法获取数据",
         "default": [
             "https://api.yuafeng.cn/API/ly/yiyan.php",
             "https://api.yuafeng.cn/API/ly/yiyan_new.php",
