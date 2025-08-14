@@ -1,5 +1,5 @@
 
-from typing import Optional, Union
+from typing import Any
 import aiohttp
 from astrbot.api.star import Context, Star, register
 from astrbot.core.config.astrbot_config import AstrBotConfig
@@ -24,8 +24,11 @@ class ImageSummaryPlugin(Star):
         self.default_summary = config.get("default_summary", "测试")
         self.yiyan_urls = config.get("yiyan_urls", [])
 
+    async def initialize(self):
+        self.session = aiohttp.ClientSession()
+
     @filter.on_decorating_result()
-    async def on_recall(self, event: AiocqhttpMessageEvent):
+    async def on_image_summary(self, event: AiocqhttpMessageEvent):
         """监听消息进行图片外显"""
         # 白名单群
         group_id = event.get_group_id()
@@ -35,57 +38,52 @@ class ImageSummaryPlugin(Star):
         chain = event.get_result().chain
 
         # 仅考虑单张图片消息
-        if not (len(chain)==1 and isinstance(chain[0], Image)):
-            return
-
-        # 注入summary
-        obmsg: list[dict] = await event._parse_onebot_json(MessageChain(chain))
-        obmsg[0]["data"]["summary"] = await self.get_summary()
-
-        # 发送消息
-        await event.bot.send(event.message_obj.raw_message, obmsg) # type: ignore
-
-        # 清空原消息链
-        chain.clear()
-        event.stop_event()
+        if chain and len(chain)==1 and isinstance(chain[0], Image):
+            # 注入summary
+            obmsg: list[dict] = await event._parse_onebot_json(MessageChain(chain))
+            obmsg[0]["data"]["summary"] = await self.get_summary()
+            # 发送消息
+            await event.bot.send(event.message_obj.raw_message, obmsg) # type: ignore
+            # 清空原消息链
+            chain.clear()
+            event.stop_event()
 
 
-    async def get_summary(self):
-        """获取外显文本"""
-        params = None
-        text = await self._make_request(urls=self.yiyan_urls, params=params)
-        summary = text[:20] if text else self.default_summary
+    async def get_summary(self, max_len=20):
+        """获取外显文本, 过长则截断"""
+        res = await self._make_request(urls=self.yiyan_urls)
+        if isinstance(res, str):
+            summary = res[:max_len]
+        else:
+            summary = self.default_summary
         return summary
 
-    async def _make_request(
-        self, urls: list, params: Optional[dict] = None
-    ) -> Union[bytes, str, dict, None]:
+    async def _make_request(self, urls: list) -> Any:
         """
         发送GET请求
         :param url: 请求的URL地址
         :param params: 请求参数，默认为None
-        :return: 响应对象或None
+        :return: 响应文本或None
         """
-        async with aiohttp.ClientSession() as session:
-            for url in urls:
-                try:
-                    async with session.get(
-                        url=url, params=params, timeout=30
-                    ) as response:
-                        response.raise_for_status()
-                        content_type = response.headers.get(
-                            "Content-Type", ""
-                        ).lower()
-                        if "application/json" in content_type:
-                            return await response.json()
-                        elif (
-                            "text/html" in content_type
-                            or "text/plain" in content_type
-                        ):
-                            return (await response.text()).strip()
-                        else:
-                            return await response.read()
-                except Exception as e:
-                    logger.warning(f"请求 URL 失败: {url}, 错误: {e}")
-                    continue  # 尝试下一个 URL
+        for url in urls:
+            try:
+                async with self.session.get(url=url, timeout=30) as response:
+                    response.raise_for_status()
+                    content_type = response.headers.get(
+                        "Content-Type", ""
+                    ).lower()
+                    if "application/json" in content_type:
+                        return await response.json()
+                    elif (
+                        "text/html" in content_type
+                        or "text/plain" in content_type
+                    ):
+                        return (await response.text()).strip()
+            except Exception as e:
+                logger.warning(f"请求 URL 失败: {url}, 错误: {e}")
+                continue  # 尝试下一个 URL
         return None
+
+    async def terminate(self):
+        await self.session.close()
+        logger.info("已关闭astrbot_plugin_image_summary的网络连接")

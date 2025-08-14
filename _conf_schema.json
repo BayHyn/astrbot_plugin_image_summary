@@ -5,20 +5,21 @@
         "hint": "在此列表中的群才会启用图片外显功能，留空表示所有群都启用",
         "default": []
     },
-    "default_summary": {
-        "description": "默认的外显文本",
-        "type": "string",
-        "default": "我喜欢你~"
-    },
     "yiyan_urls": {
         "description": "一言API",
         "type": "list",
-        "hint": "本插件通过调用一言API获取随机的外显文本",
+        "hint": "本插件通过调用一言API获取文本, 请确保填入的API返回的数据为文本格式，否则将无法获取数据",
         "default": [
             "https://api.yuafeng.cn/API/ly/yiyan.php",
             "https://api.yuafeng.cn/API/ly/yiyan_new.php",
             "https://api.yuafeng.cn/API/ly/shehui.php",
             "https://api.yuafeng.cn/API/ly/gushi.php"
         ]
+    },
+    "default_summary": {
+        "description": "默认的外显文本",
+        "hint": "API无法获取数据时会改用此文本",
+        "type": "string",
+        "default": "我喜欢你~"
     }
 }
