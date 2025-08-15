@@ -1,4 +1,3 @@
-
 import json
 from pathlib import Path
 import random
@@ -13,11 +12,12 @@ from astrbot.core.platform.sources.aiocqhttp.aiocqhttp_message_event import (
 from astrbot.api.event import filter
 from astrbot.api import logger
 
+
 @register(
     "astrbot_plugin_image_summary",
     "Zhalslar",
     "图片外显插件",
-    "v1.0.1",
+    "v1.0.2",
 )
 class ImageSummaryPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
@@ -38,7 +38,7 @@ class ImageSummaryPlugin(Star):
             )
         self.session = None
 
-    @filter.on_decorating_result()
+    @filter.on_decorating_result(priority=5)
     async def on_image_summary(self, event: AiocqhttpMessageEvent):
         """监听消息进行图片外显"""
         # 白名单群
@@ -49,16 +49,15 @@ class ImageSummaryPlugin(Star):
         chain = event.get_result().chain
 
         # 仅考虑单张图片消息
-        if chain and len(chain)==1 and isinstance(chain[0], Image):
+        if chain and len(chain) == 1 and isinstance(chain[0], Image):
             # 注入summary
             obmsg: list[dict] = await event._parse_onebot_json(MessageChain(chain))
             obmsg[0]["data"]["summary"] = await self.get_quote()
             # 发送消息
-            await event.bot.send(event.message_obj.raw_message, obmsg) # type: ignore
+            await event.bot.send(event.message_obj.raw_message, obmsg)  # type: ignore
             # 清空原消息链
             chain.clear()
             event.stop_event()
-
 
     async def get_quote(self, max_len=20):
         """获取外显文本, 过长则截断"""
@@ -73,7 +72,6 @@ class ImageSummaryPlugin(Star):
             quote = random.choice(self.default_quotes)
         logger.debug(f"图片外显: {quote}")
         return quote
-
 
     def _load_quotes(self, path: Path) -> list[str]:
         """
@@ -105,7 +103,6 @@ class ImageSummaryPlugin(Star):
             logger.error(f"读取 {path} 失败: {e}")
             return []
 
-
     async def _make_request(self, urls: list[str]) -> str | None:
         """
         随机顺序尝试所有 URL，直到拿到「可当作文本」的内容。
@@ -128,9 +125,7 @@ class ImageSummaryPlugin(Star):
                         data = await resp.json()
                         # 兼容常见字段
                         text = (
-                            data.get("content")
-                            or data.get("text")
-                            or data.get("msg")
+                            data.get("content") or data.get("text") or data.get("msg")
                         )
                         if text and isinstance(text, str):
                             return text.strip()
@@ -152,4 +147,4 @@ class ImageSummaryPlugin(Star):
     async def terminate(self):
         if self.session:
             await self.session.close()
-        logger.info("已关闭astrbot_plugin_image_summary的网络连接")
+            logger.info("已关闭astrbot_plugin_image_summary的网络连接")
