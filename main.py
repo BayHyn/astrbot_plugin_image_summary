@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import random
 import aiohttp
-from astrbot.api.star import Context, Star, register, StarTools
+from astrbot.api.star import Context, Star, register
 from astrbot.core.config.astrbot_config import AstrBotConfig
 from astrbot.core.message.components import Image
 from astrbot.core.message.message_event_result import MessageChain
@@ -17,33 +17,26 @@ from astrbot.api import logger
     "astrbot_plugin_image_summary",
     "Zhalslar",
     "图片外显插件",
-    "v1.0.2",
+    "v1.0.3",
 )
 class ImageSummaryPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
-        self.group_whitelist: list[str] = config.get("group_whitelist", [])
-        self.yiyan_urls: list[str] = config.get("yiyan_urls", [])
-        self.use_local_data: bool = config.get("use_local_data", False)
-
+        self.config = config
         self.session = None
-        self.local_quotes = None
-
-        self.default_quotes: list[str] = self._load_quotes(
-            Path(__file__).resolve().parent / "yiyan_default.json"
+        self.local_quotes: list[str] = self._load_quotes(
+            Path(__file__).resolve().parent / "local_quotes.json"
         )
-        if self.use_local_data:
-            self.local_quotes = self._load_quotes(
-                StarTools.get_data_dir("astrbot_plugin_image_summary") / "yiyan.json"
-            )
-        self.session = None
 
     @filter.on_decorating_result(priority=5)
     async def on_image_summary(self, event: AiocqhttpMessageEvent):
         """监听消息进行图片外显"""
         # 白名单群
         group_id = event.get_group_id()
-        if self.group_whitelist and group_id not in self.group_whitelist:
+        if (
+            self.config["group_whitelist"]
+            and group_id not in self.config["group_whitelist"]
+        ):
             return
 
         chain = event.get_result().chain
@@ -62,14 +55,17 @@ class ImageSummaryPlugin(Star):
     async def get_quote(self, max_len=20):
         """获取外显文本, 过长则截断"""
         quote = None
-        if self.use_local_data and self.local_quotes:
+        source = self.config["yiyan_source"].split(":")[0]
+        if source == "local" and self.local_quotes:
             quote = random.choice(self.local_quotes)
+        elif source == "config":
+            quote = random.choice(self.config["config_quotes"])
         else:
-            res = await self._make_request(urls=self.yiyan_urls)
+            res = await self._make_request(urls=self.config["api_quotes"])
             if isinstance(res, str):
                 quote = res[:max_len]
-        if not quote and self.default_quotes:
-            quote = random.choice(self.default_quotes)
+        if not quote:
+            quote = quote = random.choice(self.local_quotes)
         logger.debug(f"图片外显: {quote}")
         return quote
 

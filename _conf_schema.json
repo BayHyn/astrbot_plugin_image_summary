@@ -5,21 +5,36 @@
         "type": "list",
         "default": []
     },
-    "use_local_data":{
-        "description": "使用本地一言数据",
-        "hint": "数据文件在“data/plugin_data/astrbot_plugin_image_summary/yiyan.json”, 若想自定义一言数据，请自行打开修改, 启用本地数据后，将不再一言API来获取数据。 (注意本地数据为空，需自己填写)",
-        "type": "bool",
-        "default": false
+    "yiyan_source":{
+        "description": "选用的一言数据源",
+        "hint": "本地一言数据在本插件目录下的yiyan.json",
+        "type": "string",
+        "options": [
+            "local: 本地一言数据",
+            "config: 配置一言数据",
+            "api: 网络一言数据"
+        ],
+        "default": "config: 配置一言数据"
     },
-    "yiyan_urls": {
-        "description": "一言API",
+    "config_quotes": {
+        "description": "配置一言数据",
+        "hint": "随机取用列表里的句子",
+        "type": "list",
+        "default": [
+            "你已被移出群聊",
+            "[群主女装图]",
+            "哎呦，你干嘛~",
+            "Ciallo～(∠・ω< )⌒☆",
+            "我喜欢你很久了"
+        ]
+    },
+    "api_quotes": {
+        "description": "API一言数据",
         "hint": "本插件随机调用列表里的API获取文本, 请确保填入的API返回的数据为文本格式，否则将无法获取数据",
         "type": "list",
         "default": [
             "https://api.yuafeng.cn/API/ly/yiyan.php",
-            "https://api.yuafeng.cn/API/ly/yiyan_new.php",
-            "https://api.yuafeng.cn/API/ly/shehui.php",
-            "https://api.yuafeng.cn/API/ly/gushi.php"
+            "https://api.yuafeng.cn/API/ly/yiyan_new.php"
         ]
     }
 }
